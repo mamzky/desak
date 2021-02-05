@@ -79,6 +79,8 @@ import com.android.build.OutputFile
 
 project.ext.react = [
     enableHermes: false,  // clean and rebuild if changing
+    bundleInDebug: true,
+    devDisabledInDebug: false
 ]
 
 apply from: "../../node_modules/react-native/react.gradle"
@@ -91,12 +93,12 @@ apply from: "../../node_modules/react-native/react.gradle"
  * Upload all the APKs to the Play Store and people will download
  * the correct one based on the CPU architecture of their device.
  */
-def enableSeparateBuildPerCPUArchitecture = false
+def enableSeparateBuildPerCPUArchitecture = true
 
 /**
  * Run Proguard to shrink the Java bytecode in release builds.
  */
-def enableProguardInReleaseBuilds = false
+def enableProguardInReleaseBuilds = true
 
 /**
  * The preferred build flavor of JavaScriptCore.
@@ -129,17 +131,18 @@ android {
     }
 
     defaultConfig {
-        applicationId "com.desak"
+        applicationId "com.desak_v1"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0"
+        versionName "1.1"
+        multiDexEnabled true
     }
     splits {
         abi {
             reset()
             enable enableSeparateBuildPerCPUArchitecture
-            universalApk false  // If true, also generate a universal APK
+            universalApk true  // If true, also generate a universal APK
             include "armeabi-v7a", "x86", "arm64-v8a", "x86_64"
         }
     }
@@ -150,16 +153,29 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        release {
+            if (project.hasProperty('MYAPP_UPLOAD_STORE_FILE')) {
+                storeFile file(MYAPP_UPLOAD_STORE_FILE)
+                storePassword MYAPP_UPLOAD_STORE_PASSWORD
+                keyAlias MYAPP_UPLOAD_KEY_ALIAS
+                keyPassword MYAPP_UPLOAD_KEY_PASSWORD
+            }
+        }
     }
     buildTypes {
         debug {
+            // shrinkResources true
+            // minifyEnabled true
             signingConfig signingConfigs.debug
         }
         release {
+            // shrinkResources true
+            // minifyEnabled true
             // Caution! In production, you need to generate your own keystore file.
             // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
-            minifyEnabled enableProguardInReleaseBuilds
+            signingConfig signingConfigs.release
+            minifyEnabled 
+            enableProguardInReleaseBuilds
             proguardFiles getDefaultProguardFile("proguard-android.txt"), "proguard-rules.pro"
         }
     }
@@ -178,6 +194,13 @@ android {
 
         }
     }
+
+    aaptOptions { 
+     cruncherEnabled = false 
+    }
+    dexOptions {
+       javaMaxHeapSize "3g"
+    }
 }
 
 dependencies {
@@ -186,6 +209,14 @@ dependencies {
     implementation "com.facebook.react:react-native:+"  // From node_modules
 
     implementation "androidx.swiperefreshlayout:swiperefreshlayout:1.0.0"
+    implementation project(':react-native-cardview')
+    implementation(project(':react-native-maps')){
+        
+       exclude group: 'com.google.android.gms', module: 'play-services-base'
+       exclude group: 'com.google.android.gms', module: 'play-services-maps'
+   }
+   implementation 'com.google.android.gms:play-services-base:17.2.1'
+   implementation 'com.google.android.gms:play-services-maps:17.0.0'
 
     debugImplementation("com.facebook.flipper:flipper:${FLIPPER_VERSION}") {
       exclude group:'com.facebook.fbjni'
